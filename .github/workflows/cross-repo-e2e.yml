@@ -1,0 +1,40 @@
+name: Cross-repo E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout umbrella repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run seven-repository integration
+        run: python integrate.py --workspace "$RUNNER_TEMP/crisisweave"
+
+      - name: Show machine-readable summary
+        run: cat "$RUNNER_TEMP/crisisweave/artifact/summary.json"
+
+      - name: Upload E2E artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crisisweave-e2e
+          path: ${{ runner.temp }}/crisisweave/artifact
+          if-no-files-found: error
+          retention-days: 7
