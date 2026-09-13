@@ -1,6 +1,6 @@
 # CrisisWeave
 
-CrisisWeave is an open-source crisis-information fabric for turning fragmented public alerts and field reports into a single, confidence-scored, map-ready event stream that still works when connectivity is poor.
+CrisisWeave is a public crisis-information fabric for turning fragmented public alerts and field reports into a single, confidence-scored, map-ready event stream that still works when connectivity is poor.
 
 ## The real problem
 
@@ -21,6 +21,22 @@ CrisisWeave is designed around this pipeline:
 - `crisisweave-docs`: architecture, threat model and integration notes.
 - `crisisweave-core`: orchestration/API service. The public event contract lives here in the umbrella repository so public modules do not depend on private code.
 
+## Fastest way to try it
+
+Linux/macOS/Git Bash:
+
+```bash
+bash demo.sh
+```
+
+Windows PowerShell:
+
+```powershell
+./demo.ps1
+```
+
+The scripts clone the public simulator, verifier and alert-engine repositories, generate 30 deterministic synthetic reports, merge likely duplicates and evaluate example rules. No Python packages need to be installed beyond Python itself.
+
 ## Shared contract
 
 Every component exchanges the same JSON event shape in [`schema/event.schema.json`](schema/event.schema.json). Important design rules:
@@ -34,14 +50,14 @@ Every component exchanges the same JSON event shape in [`schema/event.schema.jso
 
 ## Open-source building blocks
 
-CrisisWeave deliberately reuses mature open-source ideas instead of reimplementing everything: MapLibre GL JS for mapping, FastAPI/Pydantic for API contracts, RapidFuzz-style lexical similarity for candidate matching, H3-style spatial bucketing for scalable geospatial joins, and service-worker patterns for offline operation. CrisisWeave integration code is original and keeps third-party projects as dependencies rather than copying their source.
+CrisisWeave deliberately reuses mature open-source ideas instead of reimplementing everything: MapLibre GL JS for mapping, FastAPI/Pydantic-style API contracts, RapidFuzz-style lexical similarity for candidate matching, H3-style spatial bucketing for scalable geospatial joins, and service-worker patterns for offline operation. CrisisWeave integration code is written specifically for this project rather than copied from those projects.
 
 ## MVP flow
 
 1. Run `crisisweave-sim` to generate a repeatable synthetic incident stream.
 2. Normalize external feeds with `crisisweave-ingests`.
 3. Pipe events through `crisisweave-verify`.
-4. Serve the resulting GeoJSON or JSON to `crisisweave-map`.
+4. Load the resulting JSON/JSONL in `crisisweave-map`.
 5. Add `crisisweave-offline` to cache the app shell and last useful event snapshot.
 6. Evaluate alert rules with `crisisweave-alerts`.
 
@@ -51,4 +67,4 @@ CrisisWeave is decision-support software, not an emergency authority. It should 
 
 ## Status
 
-Early public MVP. Interfaces are intentionally small so individual modules can be tested independently before deeper orchestration is added.
+Early public MVP. Interfaces are intentionally small so individual modules can be tested independently before deeper orchestration is added. A formal project license has not yet been selected, so the source is public but should not be described as redistributable open-source software until a license is added.
