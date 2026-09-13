@@ -1,27 +1,22 @@
 # CrisisWeave
 
-CrisisWeave is a public crisis-information fabric for turning fragmented public alerts and field reports into a single, confidence-scored, map-ready event stream that still works when connectivity is poor.
+CrisisWeave is a public crisis-information fabric that turns fragmented alerts and field reports into one provenance-preserving, confidence-scored, map-ready stream that can remain useful when connectivity is poor.
 
-## The real problem
+It is deliberately built as several small repositories rather than one opaque application. The umbrella repository now contains an end-to-end integrator that clones and exercises all seven public modules as one system.
 
-During floods, fires, earthquakes, storms and other fast-moving incidents, useful information is fragmented across CAP feeds, RSS/Atom feeds, agency JSON APIs, volunteer reports and local dashboards. The hard part is not drawing another map. It is deciding whether two reports describe the same event, preserving provenance, estimating confidence, and keeping a useful view available when the network is unreliable.
+## What it combines
 
-CrisisWeave is designed around this pipeline:
+`crisisweave-ingests` → CAP, RSS/Atom and generic JSON normalization  
+`crisisweave-sim` → deterministic flood, wildfire and earthquake test reports  
+`crisisweave-verify` → candidate matching, deduplication and evidence aggregation  
+`crisisweave-alerts` → transparent severity/confidence/area/tag rules  
+`crisisweave-map` → MapLibre browser console for mapped incidents  
+`crisisweave-offline` → service-worker caching and last-useful-feed fallback  
+`crisisweave-docs` → architecture and threat model
 
-`sources -> normalize -> verify/deduplicate -> score -> map -> offline cache -> alerts`
+The private `crisisweave-core` repository is intentionally **not** required by the public demo. Public components exchange a shared JSON event contract so the public stack remains reproducible without private code.
 
-## Repositories
-
-- `crisisweave-ingests`: adapters for CAP, RSS/Atom and JSON feeds.
-- `crisisweave-verify`: deterministic evidence aggregation, deduplication and confidence scoring.
-- `crisisweave-map`: lightweight MapLibre viewer for the normalized event stream.
-- `crisisweave-offline`: service worker and offline event cache utilities.
-- `crisisweave-alerts`: transparent rule-based alert engine.
-- `crisisweave-sim`: deterministic synthetic incident generator for testing.
-- `crisisweave-docs`: architecture, threat model and integration notes.
-- `crisisweave-core`: orchestration/API service. The public event contract lives here in the umbrella repository so public modules do not depend on private code.
-
-## Fastest way to try it
+## One-command cross-repo demo
 
 Linux/macOS/Git Bash:
 
@@ -35,36 +30,71 @@ Windows PowerShell:
 ./demo.ps1
 ```
 
-The scripts clone the public simulator, verifier and alert-engine repositories, generate 30 deterministic synthetic reports, merge likely duplicates and evaluate example rules. No Python packages need to be installed beyond Python itself.
+Or directly:
+
+```bash
+python integrate.py --workspace ./crisisweave-demo
+```
+
+The integrator:
+
+1. clones or updates all seven public repositories;
+2. generates a deterministic multi-hazard stream;
+3. creates a synthetic CAP alert and a generic JSON sensor report;
+4. normalizes both through `crisisweave-ingests`;
+5. combines them with simulated reports;
+6. runs deterministic verification/deduplication;
+7. evaluates transparent alert rules;
+8. assembles `crisisweave-map` + `crisisweave-offline` into a static field console;
+9. bundles the architecture and threat model beside the runnable artifact;
+10. performs sanity checks and fails if the pipeline produces impossible counts, no CAP event, no alert, or no map-ready geometry.
+
+The demo uses synthetic data only.
+
+## Output
+
+`artifact/raw.jsonl` — all normalized reports before verification  
+`artifact/verified.jsonl` — merged incidents with evidence metadata  
+`artifact/alerts.jsonl` — rule matches  
+`artifact/summary.json` — E2E run summary  
+`artifact/web/` — map + service worker + verified feed  
+`artifact/docs/` — architecture + threat model
+
+To inspect the generated field console:
+
+```bash
+cd crisisweave-demo/artifact
+python -m http.server 8765 -d web
+```
+
+Then open:
+
+`http://localhost:8765/index.html?feed=verified.jsonl`
 
 ## Shared contract
 
-Every component exchanges the same JSON event shape in [`schema/event.schema.json`](schema/event.schema.json). Important design rules:
+Every component exchanges the same event shape in [`schema/event.schema.json`](schema/event.schema.json). Critical design rules:
 
 1. Preserve source URLs and source identifiers.
 2. Never turn absence of evidence into evidence of safety.
-3. Keep raw source text separate from normalized fields.
-4. Treat confidence as an explainable score, not a claim of truth.
-5. Prefer deterministic behavior in the critical path; ML can be an optional enrichment layer.
-6. Degrade gracefully offline.
+3. Keep raw source material separate from normalized fields.
+4. Treat confidence as an explainable ranking signal, not a probability that a report is true.
+5. Prefer deterministic behavior in the critical path; ML belongs behind optional enrichment boundaries.
+6. Degrade gracefully when connectivity disappears.
+7. Keep official and non-official reports visibly distinguishable.
 
-## Open-source building blocks
+## Existing open-source building blocks
 
-CrisisWeave deliberately reuses mature open-source ideas instead of reimplementing everything: MapLibre GL JS for mapping, FastAPI/Pydantic-style API contracts, RapidFuzz-style lexical similarity for candidate matching, H3-style spatial bucketing for scalable geospatial joins, and service-worker patterns for offline operation. CrisisWeave integration code is written specifically for this project rather than copied from those projects.
+The current browser map directly uses MapLibre GL JS. The rest of the critical demo path intentionally uses Python's standard library so the cross-repo test can run with minimal dependencies. Future adapters can add H3-style spatial indexing, FastAPI services, richer fuzzy matching, routing and tile pipelines without making those dependencies mandatory for the baseline verifier.
 
-## MVP flow
+## Automated integration check
 
-1. Run `crisisweave-sim` to generate a repeatable synthetic incident stream.
-2. Normalize external feeds with `crisisweave-ingests`.
-3. Pipe events through `crisisweave-verify`.
-4. Load the resulting JSON/JSONL in `crisisweave-map`.
-5. Add `crisisweave-offline` to cache the app shell and last useful event snapshot.
-6. Evaluate alert rules with `crisisweave-alerts`.
+The umbrella repository contains a GitHub Actions E2E workflow that runs the same cross-repository integrator. This catches interface drift between repositories instead of allowing each module to pass its own tests while the system as a whole breaks.
 
 ## Safety scope
 
-CrisisWeave is decision-support software, not an emergency authority. It should not be used as the sole source for evacuation, medical, fire, police or rescue decisions. Deployments should clearly distinguish official alerts from community or machine-generated reports.
+CrisisWeave is decision-support software, not an emergency authority. It must not be used as the sole source for evacuation, medical, fire, police or rescue decisions. Real deployments need authenticated feeds where available, source governance, operational monitoring, rate limits, abuse controls and clear escalation procedures.
 
-## Status
+## Status and licensing
 
-Early public MVP. Interfaces are intentionally small so individual modules can be tested independently before deeper orchestration is added. A formal project license has not yet been selected, so the source is public but should not be described as redistributable open-source software until a license is added.
+This is an early public MVP, not a production emergency platform. The repositories are publicly readable, but a formal project license has not yet been selected. Until a license is added, do not describe the code as redistributable open-source software.
