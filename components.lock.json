@@ -2,16 +2,16 @@
   "schema_version": 1,
   "owner": "davidmariscalf",
   "components": {
-    "crisisweave-cores": "564548e025f41dfb1429be26f105d00109f6754b",
-    "crisisweave-ingests": "280831cdb1d048283e3b5496cd0dcb72223eda0b",
-    "crisisweave-verify": "111e010ee1db69739bff94f62d55af175dbbac87",
-    "crisisweave-alerts": "9a5e4d26b3dee4871e7e10d9749a722b4f29b78f",
-    "crisisweave-worksites": "c807498b79a050b4d17a040e58bc02fe53df3069",
-    "crisisweave-platform": "9e7aa0d2aaaf2ecb36688e1632e50da4c1218563",
-    "crisisweave-map": "b172a43559e103b29467fe33b4cfa585a1b410c4",
-    "crisisweave-offline": "a4b72f8f011ddd8f0f13be007064cbd6dc32539f",
-    "crisisweave-sim": "2ff2c3b7f77ac3201d1911f8bf4d7a33b740dab2",
+    "crisisweave-cores": "d8599077b04767df9e3f64c0a8b1208234a15d33",
+    "crisisweave-ingests": "b479066e4a68c4447fa7b9cc363a8a278d99b6c9",
+    "crisisweave-verify": "51d050eaa8335a0d34e2158fd1ae75db2d5e27f9",
+    "crisisweave-alerts": "0d6c7e12029e36016bfaeee336bfc8ddc17a6550",
+    "crisisweave-worksites": "b7b0f935f60a3f6bf92c4c8dd66f45cc9ae230df",
+    "crisisweave-platform": "eb83626f2066ccca5c90140869527d71579ea5c6",
+    "crisisweave-map": "c18f5846fc8dae25835f4cd34d42c4d8549a3c32",
+    "crisisweave-offline": "89510cd59adc931ec7e183247e9d0b110d31b054",
+    "crisisweave-sim": "311a0fea26788f3c868c0ced2354be389f08ccc8",
     "crisisweave-docs": "6f972b333c2cadee2222f29b7b5eb994a8450f40",
-    "crisisweave-infra": "d30dba1d531af8f592670a4ed04b5799f52a35a7"
+    "crisisweave-infra": "ebf42cc9acc872c64eab2584aaff0bd38e45e3ef"
   }
 }
