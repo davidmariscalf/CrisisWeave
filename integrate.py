@@ -166,10 +166,17 @@ def main() -> int:
     shutil.copy2(repos["crisisweave-map"] / "index.html", web / "index.html")
     shutil.copy2(repos["crisisweave-offline"] / "sw.js", web / "sw.js")
     shutil.copy2(artifact / "verified.jsonl", web / "verified.jsonl")
+    shutil.copy2(artifact / "alerts.jsonl", web / "alerts.jsonl")
     (web / "OPEN_ME.txt").write_text(
-        "Serve this directory over HTTP, then open index.html?feed=verified.jsonl\n"
-        "Example: python -m http.server 8765 -d web\n"
-        "Then visit: http://localhost:8765/index.html?feed=verified.jsonl\n",
+        "VOLUNTEER VIEW\n"
+        "==============\n"
+        "Serve this directory over HTTP and open index.html.\n"
+        "The console automatically loads verified.jsonl and alerts.jsonl.\n\n"
+        "Example:\n"
+        "  python -m http.server 8765 -d web\n\n"
+        "Then visit:\n"
+        "  http://localhost:8765/index.html\n\n"
+        "Operators may override feeds with ?feed=...&alerts=... when needed.\n",
         encoding="utf-8",
     )
 
@@ -194,6 +201,8 @@ def main() -> int:
         raise AssertionError("CAP ingest path did not produce an event")
     if not any(e.get("geometry") for e in verified_events):
         raise AssertionError("no map-ready geometry survived verification")
+    if not (web / "verified.jsonl").exists() or not (web / "alerts.jsonl").exists():
+        raise AssertionError("field console feeds were not packaged")
 
     summary = {
         "repositories_combined": len(REPOS),
@@ -203,6 +212,7 @@ def main() -> int:
         "map_ready_incidents": sum(bool(e.get("geometry")) for e in verified_events),
         "artifact": str(artifact),
         "web_console": str(web),
+        "volunteer_console": "index.html (auto-loads verified + alert feeds)",
         "safety": "Synthetic data only in this demo; not an emergency authority.",
     }
     (artifact / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
