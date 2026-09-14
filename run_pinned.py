@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,8 @@ REGRESSION_REPOS = (
     "crisisweave-offline",
     "crisisweave-sim",
 )
+ACTION_USES_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)", re.MULTILINE)
+SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 
 
 def run(cmd: list[str], *, cwd: Path | None = None) -> str:
@@ -62,6 +65,34 @@ def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None
     actual = run(["git", "rev-parse", "HEAD"], cwd=path)
     if actual != sha:
         raise RuntimeError(f"component revision mismatch for {name}: expected {sha}, got {actual}")
+
+
+def validate_workflow_pins(workspace: Path, components: dict[str, str]) -> None:
+    violations: list[str] = []
+    checked = 0
+    for name in components:
+        workflow_dir = workspace / name / ".github" / "workflows"
+        if not workflow_dir.is_dir():
+            continue
+        for path in sorted((*workflow_dir.glob("*.yml"), *workflow_dir.glob("*.yaml"))):
+            text = path.read_text(encoding="utf-8")
+            for match in ACTION_USES_RE.finditer(text):
+                uses = match.group(1).strip("'\"")
+                if uses.startswith("./") or uses.startswith("docker://"):
+                    continue
+                checked += 1
+                if "@" not in uses:
+                    violations.append(f"{name}/{path.relative_to(workspace / name)}: missing @ref in {uses}")
+                    continue
+                action, ref = uses.rsplit("@", 1)
+                if not action or not SHA40_RE.fullmatch(ref):
+                    violations.append(
+                        f"{name}/{path.relative_to(workspace / name)}: external action must use a lowercase 40-character SHA: {uses}"
+                    )
+    if violations:
+        raise AssertionError("mutable GitHub Action references found:\n" + "\n".join(violations))
+    if checked == 0:
+        raise AssertionError("no external GitHub Actions were found to validate")
 
 
 def run_component_regressions(workspace: Path, components: dict[str, str]) -> None:
@@ -132,6 +163,10 @@ def main() -> int:
     for name, sha in components.items():
         checkout_component(workspace, owner, name, sha)
 
+    # Supply-chain invariant: every external action in every locked component
+    # must be immutable, not a branch/tag such as @main or @v4.
+    validate_workflow_pins(workspace, components)
+
     # The integration script already runs the cores, worksites and platform
     # suites. Run the remaining module regressions here so every component with
     # a unit-test suite is exercised at the exact locked revision.
@@ -151,7 +186,7 @@ def main() -> int:
         return proc.returncode
 
     verify_artifact(workspace, components)
-    print(json.dumps({"ok": True, "locked_components": len(components), "regression_suites": len(REGRESSION_REPOS) + 3, "artifact": str(workspace / "artifact")}, indent=2))
+    print(json.dumps({"ok": True, "locked_components": len(components), "regression_suites": len(REGRESSION_REPOS) + 3, "workflow_pins": "immutable", "artifact": str(workspace / "artifact")}, indent=2))
     return 0
 
 
