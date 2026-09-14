@@ -21,23 +21,26 @@ jobs:
     timeout-minutes: 12
     steps:
       - name: Checkout umbrella repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
-      - name: Run eleven-repository integration
-        run: python integrate.py --workspace "$RUNNER_TEMP/crisisweave"
+      - name: Validate pinned runner
+        run: python -m py_compile integrate.py run_pinned.py
+
+      - name: Run eleven-repository integration at locked revisions
+        run: python run_pinned.py --workspace "$RUNNER_TEMP/crisisweave"
 
       - name: Verify integration summary
         run: |
           python - <<'PY'
           import json, os
           from pathlib import Path
-          p = Path(os.environ['RUNNER_TEMP']) / 'crisisweave' / 'artifact' / 'summary.json'
-          s = json.loads(p.read_text())
+          root = Path(os.environ['RUNNER_TEMP']) / 'crisisweave' / 'artifact'
+          s = json.loads((root / 'summary.json').read_text())
           assert s['repositories_combined'] == 11, s
           assert s['public_contract_checks'] == 'passed', s
           assert s['platform_tests'] == 'passed', s
@@ -45,12 +48,14 @@ jobs:
           assert s['raw_token_storage_check'] == 'passed', s
           assert s['demo_worksites'] >= 1, s
           assert s['alerts'] >= 1, s
+          synthetic = [json.loads(x) for x in (root / 'synthetic.jsonl').read_text().splitlines() if x.strip()]
+          assert synthetic and all(x.get('synthetic') is True for x in synthetic)
           print(json.dumps(s, indent=2))
           PY
 
       - name: Upload E2E artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: crisisweave-e2e
           path: ${{ runner.temp }}/crisisweave/artifact
