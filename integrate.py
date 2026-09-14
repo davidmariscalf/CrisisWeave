@@ -15,6 +15,7 @@ REPOS = (
     "crisisweave-verify",
     "crisisweave-alerts",
     "crisisweave-worksites",
+    "crisisweave-platform",
     "crisisweave-map",
     "crisisweave-offline",
     "crisisweave-sim",
@@ -99,9 +100,9 @@ def main() -> int:
 
     rules_path = artifact / "rules.json"; rules_path.write_text(json.dumps(RULES, indent=2), encoding="utf-8")
     alerts = run([sys.executable, str(repos["crisisweave-alerts"] / "alerts.py"), str(rules_path)], stdin=verified)
-    (artifact / "alerts.jsonl").write_text(alerts, encoding="utf-8")
+    alerts_path = artifact / "alerts.jsonl"; alerts_path.write_text(alerts, encoding="utf-8")
 
-    # Recovery work is sourced from the dedicated operational module. It is not inferred from incidents.
+    # Recovery work comes from the dedicated operational module and is never inferred from hazard proximity.
     worksites_repo = repos["crisisweave-worksites"]
     worksites_script = worksites_repo / "worksites.py"
     examples = worksites_repo / "examples" / "worksites.jsonl"
@@ -112,10 +113,30 @@ def main() -> int:
     worksites = run([sys.executable, str(worksites_script), "--db", str(work_db), "export"])
     worksites_path = artifact / "worksites.jsonl"; worksites_path.write_text(worksites, encoding="utf-8")
 
-    # Shared public guardrails are exercised against both incident and worksite outputs.
+    # Shared public guardrails are exercised against incident and worksite outputs.
     contracts = repos["crisisweave-cores"] / "contracts.py"
     run([sys.executable, str(contracts), "check", "--kind", "event", str(verified_path)])
     run([sys.executable, str(contracts), "check", "--kind", "worksite", str(worksites_path)])
+
+    # The platform is part of the E2E path, not a decorative deployment repo.
+    platform_repo = repos["crisisweave-platform"]
+    run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=platform_repo)
+    platform_state = artifact / "platform-state"; platform_state.mkdir()
+    platform_db = platform_state / "platform.db"; private_db = platform_state / "private.db"
+    platform_script = platform_repo / "crisisweave_platform.py"
+    pepper = "synthetic-e2e-pepper-value-not-for-production"
+    base = [sys.executable, str(platform_script), "--db", str(platform_db), "--private-db", str(private_db), "--pepper", pepper]
+    run(base + ["init"])
+    run(base + ["create-org", "demo-relief", "Demo Relief"])
+    run(base + ["create-principal", "coord-e2e", "--org", "demo-relief", "--name", "E2E Coordinator", "--role", "coordinator"])
+    issued = json.loads(run(base + ["issue-token", "coord-e2e"]))
+    token = issued.get("token", "")
+    if not token.startswith("cw_"): raise AssertionError("platform did not issue a CrisisWeave bearer token")
+    if token.encode() in platform_db.read_bytes(): raise AssertionError("raw platform token was stored in SQLite")
+
+    platform_docs = artifact / "platform"; platform_docs.mkdir()
+    for name in ("SECURITY.md", "DEPLOYMENT.md", "compose.yaml"):
+        shutil.copy2(platform_repo / name, platform_docs / name)
 
     web = artifact / "web"; web.mkdir()
     for name in ("index.html", "volunteer.html"): shutil.copy2(repos["crisisweave-map"] / name, web / name)
@@ -127,8 +148,8 @@ def main() -> int:
         "  Volunteer: http://localhost:8765/volunteer.html\n"
         "  Coordinator: http://localhost:8765/index.html\n\n"
         "Operational worksite API (second terminal, from the workspace root):\n"
-        "  python crisisweave-worksites/worksites.py --db artifact/worksites.db serve --port 8787\n"
-        "  Then open: http://localhost:8765/volunteer.html?api=http://127.0.0.1:8787/api/worksites\n\n"
+        "  python crisisweave-worksites/worksites.py --db artifact/worksites.db serve --port 8787\n\n"
+        "Authenticated platform API is provided by crisisweave-platform. See artifact/platform/DEPLOYMENT.md.\n"
         "The public demo is synthetic and is not emergency dispatch.\n", encoding="utf-8")
 
     docs = artifact / "docs"; docs.mkdir()
@@ -148,13 +169,27 @@ def main() -> int:
     if not any(e.get("geometry") for e in verified_events): raise AssertionError("no map-ready geometry survived verification")
     for required in ("index.html", "volunteer.html", "verified.jsonl", "alerts.jsonl", "worksites.jsonl", "sw.js"):
         if not (web / required).exists(): raise AssertionError(f"field package missing {required}")
+    for required in (platform_db, private_db, platform_docs / "DEPLOYMENT.md"):
+        if not required.exists(): raise AssertionError(f"platform artifact missing {required}")
 
     summary = {
-        "repositories_combined": len(REPOS), "raw_reports": len(raw_events), "verified_incidents": len(verified_events),
-        "alerts": len(alert_events), "demo_worksites": len(worksite_events), "assigned_demo_worksites": sum(w.get("state") == "assigned" for w in worksite_events),
-        "map_ready_incidents": sum(bool(e.get("geometry")) for e in verified_events), "public_contract_checks": "passed",
-        "artifact": str(artifact), "coordinator_console": "web/index.html", "volunteer_console": "web/volunteer.html",
-        "worksite_database": "worksites.db", "safety": "Synthetic data only; not an emergency authority or dispatch system.",
+        "repositories_combined": len(REPOS),
+        "raw_reports": len(raw_events),
+        "verified_incidents": len(verified_events),
+        "alerts": len(alert_events),
+        "demo_worksites": len(worksite_events),
+        "assigned_demo_worksites": sum(w.get("state") == "assigned" for w in worksite_events),
+        "map_ready_incidents": sum(bool(e.get("geometry")) for e in verified_events),
+        "public_contract_checks": "passed",
+        "platform_tests": "passed",
+        "platform_identity_bootstrap": "passed",
+        "raw_token_storage_check": "passed",
+        "artifact": str(artifact),
+        "coordinator_console": "web/index.html",
+        "volunteer_console": "web/volunteer.html",
+        "worksite_database": "worksites.db",
+        "platform_state": "platform-state/",
+        "safety": "Synthetic data only; not an emergency authority or dispatch system.",
     }
     (artifact / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(json.dumps(summary, indent=2)); return 0
