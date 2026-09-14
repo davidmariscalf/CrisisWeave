@@ -10,6 +10,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 LOCK_PATH = ROOT / "components.lock.json"
+REGRESSION_REPOS = (
+    "crisisweave-ingests",
+    "crisisweave-verify",
+    "crisisweave-alerts",
+    "crisisweave-map",
+    "crisisweave-offline",
+    "crisisweave-sim",
+)
 
 
 def run(cmd: list[str], *, cwd: Path | None = None) -> str:
@@ -56,11 +64,26 @@ def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None
         raise RuntimeError(f"component revision mismatch for {name}: expected {sha}, got {actual}")
 
 
+def run_component_regressions(workspace: Path, components: dict[str, str]) -> None:
+    for name in REGRESSION_REPOS:
+        if name not in components:
+            raise RuntimeError(f"regression component missing from lock: {name}")
+        tests = workspace / name / "tests"
+        if not tests.is_dir():
+            raise RuntimeError(f"expected regression tests are missing: {name}/tests")
+        run(
+            [sys.executable, "-W", "error::ResourceWarning", "-m", "unittest", "discover", "-s", "tests", "-v"],
+            cwd=workspace / name,
+        )
+
+
 def verify_artifact(workspace: Path, components: dict[str, str]) -> None:
     artifact = workspace / "artifact"
     synthetic_path = artifact / "synthetic.jsonl"
     verified_path = artifact / "verified.jsonl"
     sw_path = artifact / "web" / "sw.js"
+    coordinator_path = artifact / "web" / "index.html"
+    volunteer_path = artifact / "web" / "volunteer.html"
     summary_path = artifact / "summary.json"
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -84,6 +107,17 @@ def verify_artifact(workspace: Path, components: dict[str, str]) -> None:
     if "hasCredentials(request)" not in sw or "SNAPSHOT_URLS.has(url.href)" not in sw:
         raise AssertionError("field package is missing hardened service-worker cache boundaries")
 
+    coordinator = coordinator_path.read_text(encoding="utf-8")
+    if "u.origin!==location.origin" not in coordinator or "MAX_SNAPSHOT_BYTES=5*1024*1024" not in coordinator:
+        raise AssertionError("coordinator field package lost the same-origin snapshot boundary")
+
+    volunteer = volunteer_path.read_text(encoding="utf-8")
+    if "q.get('api')" in volunteer or "Live operational API" in volunteer:
+        raise AssertionError("volunteer package can still access an operational API directly")
+    for required in ("u.origin!==location.origin", "MAX_SNAPSHOT_BYTES=5*1024*1024", "crisisweave:last-worksites-public"):
+        if required not in volunteer:
+            raise AssertionError(f"volunteer public-snapshot guard missing: {required}")
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run CrisisWeave E2E from locked tested component revisions")
@@ -97,6 +131,11 @@ def main() -> int:
 
     for name, sha in components.items():
         checkout_component(workspace, owner, name, sha)
+
+    # The integration script already runs the cores, worksites and platform
+    # suites. Run the remaining module regressions here so every component with
+    # a unit-test suite is exercised at the exact locked revision.
+    run_component_regressions(workspace, components)
 
     cmd = [
         sys.executable,
@@ -112,7 +151,7 @@ def main() -> int:
         return proc.returncode
 
     verify_artifact(workspace, components)
-    print(json.dumps({"ok": True, "locked_components": len(components), "artifact": str(workspace / "artifact")}, indent=2))
+    print(json.dumps({"ok": True, "locked_components": len(components), "regression_suites": len(REGRESSION_REPOS) + 3, "artifact": str(workspace / "artifact")}, indent=2))
     return 0
 
 
