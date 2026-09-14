@@ -20,6 +20,7 @@ REPOS = (
     "crisisweave-offline",
     "crisisweave-sim",
     "crisisweave-docs",
+    "crisisweave-infra",
 )
 
 CAP_SAMPLE = """<?xml version="1.0" encoding="UTF-8"?>
@@ -138,6 +139,20 @@ def main() -> int:
     for name in ("SECURITY.md", "DEPLOYMENT.md", "compose.yaml"):
         shutil.copy2(platform_repo / name, platform_docs / name)
 
+    # Infrastructure is validated as part of the public system and copied into the E2E artifact.
+    infra_repo = repos["crisisweave-infra"]
+    infra_required = (
+        "site/index.html", "site/_headers", "site/_redirects", "site/health.json",
+        "site/robots.txt", "site/sitemap.xml", "site/.well-known/security.txt",
+        "netlify.toml", ".env.example", "scripts/check-secrets.py",
+    )
+    for rel in infra_required:
+        if not (infra_repo / rel).exists(): raise AssertionError(f"infrastructure repo missing {rel}")
+    run([sys.executable, str(infra_repo / "scripts" / "check-secrets.py")], cwd=infra_repo)
+    infra_artifact = artifact / "infra"
+    shutil.copytree(infra_repo / "site", infra_artifact / "site")
+    shutil.copy2(infra_repo / "netlify.toml", infra_artifact / "netlify.toml")
+
     web = artifact / "web"; web.mkdir()
     for name in ("index.html", "volunteer.html"): shutil.copy2(repos["crisisweave-map"] / name, web / name)
     shutil.copy2(repos["crisisweave-offline"] / "sw.js", web / "sw.js")
@@ -169,8 +184,8 @@ def main() -> int:
     if not any(e.get("geometry") for e in verified_events): raise AssertionError("no map-ready geometry survived verification")
     for required in ("index.html", "volunteer.html", "verified.jsonl", "alerts.jsonl", "worksites.jsonl", "sw.js"):
         if not (web / required).exists(): raise AssertionError(f"field package missing {required}")
-    for required in (platform_db, private_db, platform_docs / "DEPLOYMENT.md"):
-        if not required.exists(): raise AssertionError(f"platform artifact missing {required}")
+    for required in (platform_db, private_db, platform_docs / "DEPLOYMENT.md", infra_artifact / "site" / "_headers", infra_artifact / "site" / "health.json"):
+        if not required.exists(): raise AssertionError(f"deployment artifact missing {required}")
 
     summary = {
         "repositories_combined": len(REPOS),
@@ -184,11 +199,13 @@ def main() -> int:
         "platform_tests": "passed",
         "platform_identity_bootstrap": "passed",
         "raw_token_storage_check": "passed",
+        "infrastructure_checks": "passed",
         "artifact": str(artifact),
         "coordinator_console": "web/index.html",
         "volunteer_console": "web/volunteer.html",
         "worksite_database": "worksites.db",
         "platform_state": "platform-state/",
+        "public_site_bundle": "infra/site/",
         "safety": "Synthetic data only; not an emergency authority or dispatch system.",
     }
     (artifact / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
