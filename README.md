@@ -1,16 +1,17 @@
 # CrisisWeave
 
-CrisisWeave is a public crisis-information and recovery-coordination prototype with separate surfaces for information management, volunteer work and authenticated deployment.
+CrisisWeave is a public crisis-information and recovery-coordination prototype with separate surfaces for information management, volunteer work, authenticated deployment and public infrastructure.
 
 1. **Coordinator / information-management view** — fragmented alerts and field reports become a provenance-preserving, confidence-scored, map-ready incident stream.
 2. **Volunteer work view** — concrete recovery worksites that were explicitly requested or assessed, with crew needs, skills, state and safety notes.
 3. **Platform boundary** — organisation identity, role-based permissions, private-data separation, audit, rate limiting and an authenticated API gateway.
+4. **Infrastructure boundary** — public site, security headers, health checks, deployment configuration and secret-scanning guardrails.
 
 A hazard incident must **never** become a household cleanup job merely because it occurred nearby.
 
 ## Public architecture
 
-The E2E demo now exercises **ten public repositories**:
+The E2E demo now exercises **eleven public repositories**:
 
 - `crisisweave-cores` — shared public contract/privacy/provenance checks
 - `crisisweave-ingests` — CAP, RSS/Atom and generic JSON normalization
@@ -20,8 +21,9 @@ The E2E demo now exercises **ten public repositories**:
 - `crisisweave-worksites` — worksite lifecycle, SQLite state, atomic team assignment, audit trail and API
 - `crisisweave-platform` — organisations, roles, HMAC-protected bearer tokens, private-data store, gateway, rate limiting, health/readiness, backups and deployment baseline
 - `crisisweave-map` — coordinator incident console + volunteer work board
-- `crisisweave-offline` — service-worker caching and snapshot fallback
+- `crisisweave-offline` — service-worker caching, warmed map dependencies and snapshot fallback
 - `crisisweave-docs` — architecture and threat model
+- `crisisweave-infra` — public site, Netlify configuration, deploy-safe security headers, health endpoint, uptime checks and secret scanning
 
 The older private `crisisweave-core` repository is **not required** by the public path.
 
@@ -43,7 +45,7 @@ Or:
 python integrate.py --workspace ./crisisweave-demo
 ```
 
-The integrator clones/updates all ten modules, creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs public contract/PII guardrails, executes the platform HTTP/RBAC tests, bootstraps a synthetic organisation/coordinator and verifies that the issued raw bearer token is not persisted in SQLite.
+The integrator clones/updates all eleven modules, creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs public contract/PII guardrails, executes the platform HTTP/RBAC tests, bootstraps a synthetic organisation/coordinator, verifies that the issued raw bearer token is not persisted in SQLite, validates infrastructure files and reruns the infrastructure secret scanner.
 
 ## Outputs
 
@@ -54,9 +56,20 @@ The integrator clones/updates all ten modules, creates synthetic incident inputs
 - `artifact/worksites.jsonl` — public-safe worksite snapshot
 - `artifact/platform-state/` — synthetic platform identity/private-state databases used by the E2E
 - `artifact/platform/` — platform security/deployment documentation and compose baseline
+- `artifact/infra/` — validated public-site and deployment configuration bundle
 - `artifact/web/` — coordinator and volunteer browser package
 - `artifact/docs/` — architecture + threat model
 - `artifact/summary.json` — E2E summary
+
+## Public site
+
+The public project site is currently deployed at:
+
+```text
+https://crisisweave.netlify.app
+```
+
+The requested custom domain is `crisisweave.owns.it.com`; activation depends on the external domain registry accepting its pull request.
 
 ## Field package
 
@@ -77,7 +90,7 @@ Volunteer board:
 http://localhost:8765/volunteer.html
 ```
 
-The volunteer UI falls back to the packaged snapshot when no operational API is available.
+The volunteer UI falls back to the packaged snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links and uses a local no-basemap style when launched offline after its dependencies have been cached.
 
 ## Operational worksite API
 
@@ -102,6 +115,7 @@ The authenticated deployment boundary lives in `crisisweave-platform`. Its READM
 9. Do not allow two teams to silently claim the same worksite.
 10. Do not store raw platform bearer tokens in the identity database.
 11. Keep private records separate from public worksite/incident feeds.
+12. Never commit deployment secrets or API credentials into public repositories.
 
 ## Roles
 
@@ -113,7 +127,7 @@ The authenticated deployment boundary lives in `crisisweave-platform`. Its READM
 
 ## What is still not production-ready
 
-The prototype now includes local organisation identity, RBAC, token hashing, private-data separation, audit, backups, rate limiting and deployment configuration. A real humanitarian deployment still needs external identity/MFA, TLS and secret management, managed encrypted storage, robust multi-node synchronisation, shared rate limiting when scaled, central monitoring, tested disaster recovery, privacy/retention governance, organisation onboarding/offboarding, and integrations with authoritative recovery systems.
+The prototype now includes local organisation identity, RBAC, token hashing, private-data separation, audit, backups, rate limiting, deployment configuration, a public TLS-hosted static site, security headers and automated public-site health checks. A real humanitarian deployment still needs external identity/MFA, production backend TLS and managed secret storage, managed encrypted storage, robust multi-node synchronisation, shared rate limiting when scaled, central monitoring, tested disaster recovery, privacy/retention governance, organisation onboarding/offboarding, and integrations with authoritative recovery systems.
 
 CrisisWeave remains decision-support and coordination software, not an emergency authority. It must not be the sole source for evacuation, medical, fire, police or rescue decisions.
 
