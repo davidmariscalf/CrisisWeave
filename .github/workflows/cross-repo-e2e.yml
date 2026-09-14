@@ -29,7 +29,7 @@ jobs:
           python-version: "3.12"
 
       - name: Validate pinned runner
-        run: python -m py_compile integrate.py run_pinned.py
+        run: python -m py_compile integrate.py run_pinned.py seal_artifact.py
 
       - name: Run eleven-repository integration at locked revisions
         run: python run_pinned.py --workspace "$RUNNER_TEMP/crisisweave"
@@ -52,6 +52,11 @@ jobs:
           assert synthetic and all(x.get('synthetic') is True for x in synthetic)
           print(json.dumps(s, indent=2))
           PY
+
+      - name: Seal and verify generated artifact
+        run: |
+          python seal_artifact.py "$RUNNER_TEMP/crisisweave/artifact" --lock components.lock.json
+          python seal_artifact.py "$RUNNER_TEMP/crisisweave/artifact" --verify
 
       - name: Upload E2E artifact
         if: always()
