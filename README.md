@@ -5,13 +5,13 @@ CrisisWeave is a public crisis-information and recovery-coordination prototype w
 1. **Coordinator / information-management view** — fragmented alerts and field reports become a provenance-preserving, confidence-scored, map-ready incident stream.
 2. **Volunteer work view** — concrete recovery worksites that were explicitly requested or assessed, with crew needs, skills, state and safety notes.
 3. **Platform boundary** — organisation identity, role-based permissions, private-data separation, audit, rate limiting and an authenticated API gateway.
-4. **Infrastructure boundary** — public site, security headers, health checks, deployment configuration and secret-scanning guardrails.
+4. **Infrastructure boundary** — public site, role-specific synthetic demos, security headers, health checks, deployment configuration and secret-scanning guardrails.
 
 A hazard incident must **never** become a household cleanup job merely because it occurred nearby.
 
 ## Public architecture
 
-The E2E demo now exercises **eleven public repositories**:
+The E2E demo exercises **eleven public repositories**:
 
 - `crisisweave-cores` — shared public contract/privacy/provenance checks
 - `crisisweave-ingests` — CAP, RSS/Atom and generic JSON normalization
@@ -19,11 +19,11 @@ The E2E demo now exercises **eleven public repositories**:
 - `crisisweave-verify` — candidate matching, deduplication and evidence aggregation
 - `crisisweave-alerts` — transparent alert rules
 - `crisisweave-worksites` — worksite lifecycle, SQLite state, atomic team assignment, audit trail and API
-- `crisisweave-platform` — organisations, roles, HMAC-protected bearer tokens, private-data store, gateway, rate limiting, health/readiness, backups and deployment baseline
+- `crisisweave-platform` — organisations, roles, HMAC-protected expiring bearer tokens, revocation, private-data store, gateway, exact-origin CORS, rate limiting, health/readiness, verified backups and deployment baseline
 - `crisisweave-map` — coordinator incident console + volunteer work board
 - `crisisweave-offline` — service-worker caching, warmed map dependencies and snapshot fallback
 - `crisisweave-docs` — architecture and threat model
-- `crisisweave-infra` — public site, Netlify configuration, deploy-safe security headers, health endpoint, uptime checks and secret scanning
+- `crisisweave-infra` — public site, synthetic role demos, Netlify configuration, deploy-safe security headers, health endpoint, uptime checks and secret scanning
 
 The older private `crisisweave-core` repository is **not required** by the public path.
 
@@ -45,7 +45,9 @@ Or:
 python integrate.py --workspace ./crisisweave-demo
 ```
 
-The integrator clones/updates all eleven modules, creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs public contract/PII guardrails, executes the platform HTTP/RBAC tests, bootstraps a synthetic organisation/coordinator, verifies that the issued raw bearer token is not persisted in SQLite, validates infrastructure files and reruns the infrastructure secret scanner.
+The integrator clones/updates all eleven modules, creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs public contract/PII guardrails, executes the platform HTTP/RBAC/security tests, bootstraps a synthetic organisation/coordinator, verifies that the issued raw bearer token is not persisted in SQLite, validates infrastructure files and reruns the infrastructure secret scanner.
+
+The scheduled Cross-repo E2E additionally asserts the expected 11-repository architecture and core safety outputs before publishing its artifact.
 
 ## Outputs
 
@@ -61,13 +63,22 @@ The integrator clones/updates all eleven modules, creates synthetic incident inp
 - `artifact/docs/` — architecture + threat model
 - `artifact/summary.json` — E2E summary
 
-## Public site
+## Public evaluation site
 
 The public project site is currently deployed at:
 
 ```text
 https://crisisweave.netlify.app
 ```
+
+The infrastructure source contains two deliberately synthetic, non-authoritative evaluation surfaces:
+
+```text
+https://crisisweave.netlify.app/volunteer-demo.html
+https://crisisweave.netlify.app/coordinator-demo.html
+```
+
+They are designed for usability feedback without exposing operational feeds, credentials or survivor records. The volunteer demo has no self-claim action; assignments remain a coordinator-controlled operation.
 
 The requested custom domain is `crisisweave.owns.it.com`; activation depends on the external domain registry accepting its pull request.
 
@@ -90,7 +101,7 @@ Volunteer board:
 http://localhost:8765/volunteer.html
 ```
 
-The volunteer UI falls back to the packaged snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links and uses a local no-basemap style when launched offline after its dependencies have been cached.
+The volunteer UI falls back to the packaged snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links and uses cached mapping dependencies where available when connectivity disappears.
 
 ## Operational worksite API
 
@@ -100,7 +111,24 @@ From the workspace root:
 python crisisweave-worksites/worksites.py --db artifact/worksites.db serve --port 8787
 ```
 
-The authenticated deployment boundary lives in `crisisweave-platform`. Its README and `artifact/platform/DEPLOYMENT.md` describe the platform API and deployment baseline.
+The authenticated deployment boundary lives in `crisisweave-platform`. Its `openapi.yaml`, README and `artifact/platform/DEPLOYMENT.md` describe the platform API and deployment baseline.
+
+## Platform hardening now exercised
+
+The public platform MVP now includes:
+
+- raw bearer tokens stored only as HMAC digests
+- 24-hour CLI token expiry by default, configurable for shorter sessions
+- token listing, individual revocation and principal deactivation
+- exact-origin authenticated browser CORS/preflight
+- actor-spoof prevention for worksite mutations
+- private-record optimistic concurrency with `ETag` / `If-Match`
+- graceful `502` behavior if the worksite service is unavailable
+- request IDs and baseline API security headers
+- online SQLite backups with integrity checks and SHA256 manifests
+- a machine-readable OpenAPI contract
+
+These are MVP controls, not a substitute for external identity/MFA, KMS-backed encrypted storage or distributed production infrastructure.
 
 ## Safety invariants
 
@@ -116,6 +144,8 @@ The authenticated deployment boundary lives in `crisisweave-platform`. Its READM
 10. Do not store raw platform bearer tokens in the identity database.
 11. Keep private records separate from public worksite/incident feeds.
 12. Never commit deployment secrets or API credentials into public repositories.
+13. Reject stale private-record writes when clients provide a version guard.
+14. A public demo card is never authority to enter a property or hazardous area.
 
 ## Roles
 
@@ -127,7 +157,7 @@ The authenticated deployment boundary lives in `crisisweave-platform`. Its READM
 
 ## What is still not production-ready
 
-The prototype now includes local organisation identity, RBAC, token hashing, private-data separation, audit, backups, rate limiting, deployment configuration, a public TLS-hosted static site, security headers and automated public-site health checks. A real humanitarian deployment still needs external identity/MFA, production backend TLS and managed secret storage, managed encrypted storage, robust multi-node synchronisation, shared rate limiting when scaled, central monitoring, tested disaster recovery, privacy/retention governance, organisation onboarding/offboarding, and integrations with authoritative recovery systems.
+The prototype now includes local organisation identity, RBAC, expiring/revocable token handling, private-data separation, optimistic concurrency, audit, verified backups, rate limiting, deployment configuration, a public TLS-hosted static site, security headers and automated public-site checks. A real humanitarian deployment still needs external identity/MFA, production backend TLS and managed secret storage, managed encrypted storage/KMS, robust shared multi-node state, shared rate limiting when scaled, central monitoring, tested off-host disaster recovery, privacy/retention governance, organisation onboarding/offboarding, incident-response ownership and integrations with authoritative recovery systems.
 
 CrisisWeave remains decision-support and coordination software, not an emergency authority. It must not be the sole source for evacuation, medical, fire, police or rescue decisions.
 
