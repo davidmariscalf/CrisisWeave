@@ -28,8 +28,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Validate pinned runner
-        run: python -m py_compile integrate.py run_pinned.py seal_artifact.py
+      - name: Compile umbrella sources
+        run: python -m py_compile integrate.py run_pinned.py seal_artifact.py production_check.py
+
+      - name: Run production preflight
+        run: python production_check.py
+
+      - name: Run umbrella unit tests
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v
 
       - name: Run eleven-repository integration at locked revisions
         run: python run_pinned.py --workspace "$RUNNER_TEMP/crisisweave"
