@@ -27,7 +27,7 @@ The E2E demo exercises **eleven public repositories**:
 
 The older private `crisisweave-core` repository is **not required** by the public path.
 
-## One-command E2E demo
+## One-command locked E2E demo
 
 ```bash
 bash demo.sh
@@ -39,13 +39,17 @@ Windows PowerShell:
 ./demo.ps1
 ```
 
-Or:
+Both launchers run the production preflight, fetch the exact component revisions in `components.lock.json`, execute the full E2E and seal the generated artifact with `MANIFEST.sha256` and `BUILD_PROVENANCE.json`.
+
+For development only, `integrate.py` can follow the current default branches of all components:
 
 ```bash
 python integrate.py --workspace ./crisisweave-demo
 ```
 
-The integrator clones/updates all eleven modules, creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs worksite/core/platform tests, creates a separate privacy-minimised public worksite snapshot, runs public contract/PII guardrails, bootstraps a synthetic organisation/coordinator, verifies that the issued raw bearer token is not persisted in SQLite, validates infrastructure profiles and reruns the infrastructure secret scanner.
+Do not use `integrate.py` to build a release artifact. See `PRODUCTION.md` for the release and operational-deployment boundary.
+
+The locked E2E creates synthetic incident inputs, ingests and verifies them, evaluates alerts, imports explicit synthetic worksites into SQLite, performs an atomic team assignment, runs component regression suites, creates a separate privacy-minimised public worksite snapshot, runs public contract/PII guardrails, bootstraps a synthetic organisation/coordinator, verifies that the issued raw bearer token is not persisted in SQLite, validates infrastructure profiles and reruns the infrastructure secret scanner.
 
 ## Outputs
 
@@ -191,9 +195,11 @@ These are deployment profiles, **not claims that the components are currently ru
 
 **Viewers** can inspect operational/intelligence surfaces without mutation privileges.
 
-## What is still not production-ready
+## Operational deployment still required
 
-Much of the remaining work is now deployment/integration rather than missing repository structure. A real humanitarian deployment still needs the recommended identity/TLS/secrets/DR/monitoring components to be actually provisioned, encrypted persistent storage/KMS, an authoritative shared transactional store before multi-writer scale-out, shared rate limiting when scaled, measured recovery objectives, privacy/retention governance, organisation onboarding/offboarding, incident-response ownership and an approved live integration contract with a recovery organisation such as Crisis Cleanup.
+The umbrella repository now has a reproducible, locked and self-checking release path. That does **not** make the public evaluation site a live humanitarian production system.
+
+A real humanitarian deployment still needs the recommended identity/TLS/secrets/DR/monitoring components to be actually provisioned, encrypted persistent storage/KMS, an authoritative shared transactional store before multi-writer scale-out, shared rate limiting when scaled, measured recovery objectives, privacy/retention governance, organisation onboarding/offboarding, incident-response ownership and an approved live integration contract with a recovery organisation such as Crisis Cleanup. See `PRODUCTION.md`.
 
 CrisisWeave remains decision-support and coordination software, not an emergency authority. It must not be the sole source for evacuation, medical, fire, police or rescue decisions.
 
