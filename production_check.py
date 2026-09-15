@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import integrate
+
 ROOT = Path(__file__).resolve().parent
 SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 ACTION_USES_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)", re.MULTILINE)
@@ -17,7 +19,9 @@ REQUIRED_FILES = (
     "run_pinned.py",
     "seal_artifact.py",
     "schema/event.schema.json",
+    "PRODUCTION.md",
     ".github/workflows/cross-repo-e2e.yml",
+    ".github/workflows/quality.yml",
 )
 FORBIDDEN_TRACKED_BASENAMES = {".env", "id_rsa", "id_ed25519"}
 FORBIDDEN_TRACKED_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}
@@ -46,6 +50,10 @@ def check_component_lock() -> int:
     for name, sha in components.items():
         if not str(name).startswith("crisisweave-") or not SHA40_RE.fullmatch(str(sha)):
             raise RuntimeError(f"invalid locked component: {name}")
+    if set(components) != set(integrate.REPOS):
+        missing = sorted(set(integrate.REPOS) - set(components))
+        extra = sorted(set(components) - set(integrate.REPOS))
+        raise RuntimeError(f"component lock and integrator disagree; missing={missing}, extra={extra}")
     return len(components)
 
 
@@ -92,6 +100,8 @@ def check_launchers() -> None:
             raise RuntimeError(f"{rel} does not use the locked runner")
         if "production_check.py" not in text:
             raise RuntimeError(f"{rel} does not run the production preflight")
+        if "seal_artifact.py" not in text or "--lock" not in text:
+            raise RuntimeError(f"{rel} does not seal the release artifact")
         if "integrate.py" in text:
             raise RuntimeError(f"{rel} bypasses the locked runner")
 
@@ -132,7 +142,7 @@ def main() -> int:
         "python": sys.version.split()[0],
         "locked_components": components,
         "immutable_actions_checked": actions,
-        "launchers": "locked",
+        "launchers": "locked_and_sealed",
         "tracked_secret_filenames": "clear",
     }, indent=2))
     return 0
