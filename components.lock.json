@@ -6,12 +6,12 @@
     "crisisweave-ingests": "c72449aab8d3a4a601940adf277d5396756b8f3f",
     "crisisweave-verify": "848ae301e2dcb492b77dfb8c79b2975d2e52cbbe",
     "crisisweave-alerts": "1f7e82f9319083c38ae1d086b2e7af6facdc1322",
-    "crisisweave-worksites": "87413a3ea2f82948b3576703f572fd99af028621",
+    "crisisweave-worksites": "18381dd0a22b7f0f435355adbc5d01ea44844b77",
     "crisisweave-platform": "1a78177060cc77ff2c5776d5b6088f4deb568219",
-    "crisisweave-map": "c18f5846fc8dae25835f4cd34d42c4d8549a3c32",
-    "crisisweave-offline": "89510cd59adc931ec7e183247e9d0b110d31b054",
-    "crisisweave-sim": "311a0fea26788f3c868c0ced2354be389f08ccc8",
-    "crisisweave-docs": "6f972b333c2cadee2222f29b7b5eb994a8450f40",
-    "crisisweave-infra": "10a3732b0c3cf5642d79972acf2aa5a66367387c"
+    "crisisweave-map": "a8a084b340b0f6cb39ca1cf41fe1a4febeaf8410",
+    "crisisweave-offline": "ece3292989591664e6004f0801f140faacc59263",
+    "crisisweave-sim": "a51947d8e7e21fc579ddc92698646c5f74421d87",
+    "crisisweave-docs": "d71366ac1c3f7bebfb301fc51dc7efb722da13f0",
+    "crisisweave-infra": "ff757faec416ce9d643d020c95a075cf2e0f45c0"
   }
 }
