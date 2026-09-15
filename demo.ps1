@@ -19,9 +19,12 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & $python.Source "$ScriptDir\run_pinned.py" --workspace $WorkDir
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+& $python.Source "$ScriptDir\seal_artifact.py" "$WorkDir\artifact" --lock "$ScriptDir\components.lock.json"
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host ""
-Write-Host "CrisisWeave locked E2E artifact created in: $WorkDir\artifact"
-Write-Host "Verify the sealed artifact with:"
+Write-Host "CrisisWeave locked and sealed E2E artifact created in: $WorkDir\artifact"
+Write-Host "Verify it again with:"
 Write-Host "  python $ScriptDir\seal_artifact.py $WorkDir\artifact --verify"
 Write-Host "To inspect the field console:"
 Write-Host "  cd $WorkDir\artifact"
