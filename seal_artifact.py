@@ -21,6 +21,8 @@ def sha256(path: Path) -> str:
 
 def files(root: Path):
     for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
+        if path.is_symlink():
+            raise SystemExit(f"artifact contains symlink: {path.relative_to(root).as_posix()}")
         if path.is_file() and path.name != MANIFEST:
             yield path
 
