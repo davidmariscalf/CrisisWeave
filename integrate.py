@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from case_studies import build_case_studies
+
 OWNER = "davidmariscalf"
 REPOS = (
     "crisisweave-cores",
@@ -261,8 +263,13 @@ def main() -> int:
         if not required.exists():
             raise AssertionError(f"deployment artifact missing {required}")
 
+    case_study_results = build_case_studies(repos, artifact, run)
+
     summary = {
         "repositories_combined": len(REPOS),
+        "case_studies": case_study_results["case_count"],
+        "case_study_checks": "passed",
+        "case_study_results": "case-studies/index.json",
         "raw_reports": len(raw_events),
         "verified_incidents": len(verified_events),
         "alerts": len(alert_events),
