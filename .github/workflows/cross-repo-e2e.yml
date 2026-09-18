@@ -17,6 +17,7 @@ concurrency:
 
 jobs:
   integrate:
+    name: Cross-repo E2E
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
@@ -29,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Compile umbrella sources
-        run: python -m py_compile integrate.py run_pinned.py seal_artifact.py production_check.py
+        run: python -m py_compile integrate.py case_studies.py run_pinned.py seal_artifact.py production_check.py
 
       - name: Run production preflight
         run: python production_check.py
@@ -48,6 +49,8 @@ jobs:
           root = Path(os.environ['RUNNER_TEMP']) / 'crisisweave' / 'artifact'
           s = json.loads((root / 'summary.json').read_text())
           assert s['repositories_combined'] == 11, s
+          assert s['case_studies'] == 3, s
+          assert s['case_study_checks'] == 'passed', s
           assert s['public_contract_checks'] == 'passed', s
           assert s['platform_tests'] == 'passed', s
           assert s['platform_identity_bootstrap'] == 'passed', s

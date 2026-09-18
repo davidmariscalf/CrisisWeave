@@ -35,3 +35,13 @@ jobs:
 
       - name: Unit tests
         run: python -W error::ResourceWarning -m unittest discover -s tests -v
+
+  required-quality-gate:
+    name: Quality gate
+    needs: quality
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require all supported Python checks
+        run: test "${{ needs.quality.result }}" = "success"

@@ -64,7 +64,18 @@ The locked E2E creates synthetic incident inputs, ingests and verifies them, eva
 - `artifact/infra/` — validated public site plus identity, TLS, secrets, disaster-recovery and observability profiles
 - `artifact/web/` — coordinator and volunteer browser package; it receives only the public worksite snapshot
 - `artifact/docs/` — architecture + threat model
+- `artifact/case-studies/` — reproducible synthetic case-study inputs, rules, outputs and results
 - `artifact/summary.json` — E2E summary
+
+## Reproducible case studies
+
+The locked E2E now executes three synthetic cases rather than relying on narrative claims alone:
+
+- **Fragmented flood reports:** two independent sources are merged into one incident while report-level source IDs, source types, observation times, severity range and corroboration remain inspectable.
+- **Stale wildfire report:** a transparent rule with `max_age_hours` blocks an old high-severity report while allowing a recent report at the same deterministic evaluation time.
+- **Recovery worksite:** hazard reports remain separate from explicitly requested/assessed recovery work, and the public worksite projection removes operational-only fields.
+
+See `CASE_STUDIES.md`. These are reproducible evaluations, not claims of a live emergency-service deployment.
 
 ## Worksite privacy boundary
 
