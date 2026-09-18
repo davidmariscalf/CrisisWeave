@@ -88,6 +88,21 @@ def main() -> int:
     workspace = Path(args.workspace).resolve()
     workspace.mkdir(parents=True, exist_ok=True)
     repos = {name: ensure_repo(workspace, name, skip_clone=args.skip_clone) for name in REPOS}
+
+    # A release must exercise component regression suites, not only the happy
+    # path used by the integrator. Repositories without a tests/ directory are
+    # skipped explicitly rather than treated as implicitly tested.
+    tested_components = []
+    for name in REPOS:
+        tests_dir = repos[name] / "tests"
+        if not tests_dir.is_dir():
+            continue
+        run([
+            sys.executable, "-W", "error::ResourceWarning",
+            "-m", "unittest", "discover", "-s", "tests", "-v",
+        ], cwd=repos[name])
+        tested_components.append(name)
+
     artifact = workspace / "artifact"
     if artifact.exists():
         shutil.rmtree(artifact)
@@ -120,7 +135,6 @@ def main() -> int:
 
     # Recovery work comes from the dedicated operational module and is never inferred from hazard proximity.
     worksites_repo = repos["crisisweave-worksites"]
-    run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=worksites_repo)
     worksites_script = worksites_repo / "worksites.py"
     public_export_script = worksites_repo / "public_export.py"
     examples = worksites_repo / "examples" / "worksites.jsonl"
@@ -141,14 +155,12 @@ def main() -> int:
 
     # Shared public guardrails are exercised against incident and public worksite outputs.
     cores_repo = repos["crisisweave-cores"]
-    run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=cores_repo)
     contracts = cores_repo / "contracts.py"
     run([sys.executable, str(contracts), "check", "--kind", "event", str(verified_path)])
     run([sys.executable, str(contracts), "check", "--kind", "worksite", str(worksites_path)])
 
     # The platform is part of the E2E path, not a decorative deployment repo.
     platform_repo = repos["crisisweave-platform"]
-    run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=platform_repo)
     platform_state = artifact / "platform-state"
     platform_state.mkdir()
     platform_db = platform_state / "platform.db"
@@ -293,9 +305,11 @@ def main() -> int:
         "map_ready_incidents": sum(bool(e.get("geometry")) for e in verified_events),
         "public_contract_checks": "passed",
         "public_worksite_projection": "passed",
-        "worksite_tests": "passed",
+        "component_test_suites": tested_components,
+        "component_test_suite_count": len(tested_components),
+        "worksite_tests": "passed" if "crisisweave-worksites" in tested_components else "not_present",
         "core_contract_tests": "passed",
-        "platform_tests": "passed",
+        "platform_tests": "passed" if "crisisweave-platform" in tested_components else "not_present",
         "platform_identity_bootstrap": "passed",
         "raw_token_storage_check": "passed",
         "infrastructure_checks": "passed",
