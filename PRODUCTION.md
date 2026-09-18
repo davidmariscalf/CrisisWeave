@@ -36,4 +36,8 @@ Do not describe CrisisWeave as an emergency authority, dispatch system or sole s
 
 Do not advance `components.lock.json` merely because component default branches changed. Promote component revisions only after their own tests are green and the umbrella E2E passes at the exact proposed SHAs.
 
-The locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.\n\nThe locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.\n\nThe lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.
+The locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.
+
+The field-package build downloads the pinned MapLibre npm tarball, verifies its recorded SHA-512 integrity value, and extracts only the browser runtime, stylesheet and upstream license into the release artifact. The generated field package therefore does not require a mapping CDN for the MapLibre runtime. The optional online basemap remains network-dependent; offline mode deliberately falls back to a local no-basemap style.
+
+The lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.

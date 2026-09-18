@@ -1,6 +1,6 @@
 # CrisisWeave
 
-CrisisWeave is a public crisis-information and recovery-coordination prototype with separate surfaces for information management, volunteer work, authenticated deployment and public infrastructure.
+CrisisWeave is a public-beta crisis-information and recovery-coordination product with separate surfaces for information management, volunteer work, authenticated deployment and public infrastructure.
 
 1. **Coordinator / information-management view** — fragmented alerts and field reports become a provenance-preserving, confidence-scored, map-ready incident stream.
 2. **Volunteer work view** — concrete recovery worksites that were explicitly requested or assessed, with crew needs, skills, state and safety notes.
@@ -21,13 +21,13 @@ The E2E demo exercises **eleven public repositories**:
 - `crisisweave-worksites` — worksite lifecycle, SQLite state, atomic team assignment, audit trail, privacy-minimised public export and partner adapters
 - `crisisweave-platform` — organisations, roles, HMAC-protected expiring bearer tokens, revocation, private-data store, gateway, exact-origin CORS, rate limiting, health/readiness, verified backups and privacy-safe Prometheus metrics
 - `crisisweave-map` — coordinator incident console + volunteer work board
-- `crisisweave-offline` — service-worker caching, warmed map dependencies and snapshot fallback
+- `crisisweave-offline` — service-worker caching, packaged same-origin map runtime and snapshot fallback
 - `crisisweave-docs` — architecture and threat model
 - `crisisweave-infra` — public site, synthetic role demos, Netlify configuration, TLS/identity/secrets/DR/observability deployment profiles, uptime checks and secret scanning
 
 The older private `crisisweave-core` repository is **not required** by the public path.
 
-## One-command locked E2E demo
+## One-command locked release/evaluation build
 
 ```bash
 bash demo.sh
@@ -138,7 +138,7 @@ Volunteer board:
 http://localhost:8765/volunteer.html
 ```
 
-The volunteer UI falls back to the packaged public snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links and uses cached mapping dependencies where available when connectivity disappears.
+The volunteer UI falls back to the packaged public snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links, exposes feed freshness, and ships a pinned MapLibre runtime inside the field package. With no network, the console uses a local no-basemap style instead of depending on a mapping CDN.
 
 ## Operational worksite API
 
@@ -216,4 +216,4 @@ CrisisWeave remains decision-support and coordination software, not an emergency
 
 ## Status and licensing
 
-This is an early public MVP. The repositories are publicly readable, but a formal project-wide license has not yet been selected. Until a license is added, do not describe the full project as redistributable open-source software.
+This is a public beta with reproducible release tooling and synthetic evaluation surfaces. It is not yet an approved live humanitarian deployment. The repositories are publicly readable, but a formal project-wide license has not yet been selected. Until a license is added, do not describe the full project as redistributable open-source software.
