@@ -198,8 +198,19 @@ def main() -> int:
 
     web = artifact / "web"
     web.mkdir()
-    for name in ("index.html", "volunteer.html"):
+    for name in ("index.html", "volunteer.html", "manifest.webmanifest"):
         shutil.copy2(repos["crisisweave-map"] / name, web / name)
+
+    # Vendor the exact reviewed MapLibre runtime into the field package. The
+    # helper verifies the npm package SHA-512 before extracting JS/CSS/license,
+    # so cold offline startup never depends on a CDN.
+    vendor_dir = web / "vendor"
+    run([
+        sys.executable,
+        str(repos["crisisweave-map"] / "vendor_maplibre.py"),
+        str(vendor_dir),
+    ])
+
     shutil.copy2(repos["crisisweave-offline"] / "sw.js", web / "sw.js")
     for name in ("verified.jsonl", "alerts.jsonl", "worksites.jsonl"):
         shutil.copy2(artifact / name, web / name)
@@ -252,7 +263,11 @@ def main() -> int:
         raise AssertionError("CAP ingest path did not produce an event")
     if not any(e.get("geometry") for e in verified_events):
         raise AssertionError("no map-ready geometry survived verification")
-    for required in ("index.html", "volunteer.html", "verified.jsonl", "alerts.jsonl", "worksites.jsonl", "sw.js"):
+    for required in (
+        "index.html", "volunteer.html", "manifest.webmanifest",
+        "verified.jsonl", "alerts.jsonl", "worksites.jsonl", "sw.js",
+        "vendor/maplibre-gl.js", "vendor/maplibre-gl.css", "vendor/MAPLIBRE_LICENSE.txt",
+    ):
         if not (web / required).exists():
             raise AssertionError(f"field package missing {required}")
     for required in (
@@ -290,6 +305,7 @@ def main() -> int:
         "volunteer_console": "web/volunteer.html",
         "worksite_database": "worksites.db",
         "public_worksite_snapshot": "worksites.jsonl",
+        "offline_map_runtime": "packaged_pinned_maplibre",
         "operational_worksite_export": "worksites-operational.jsonl",
         "platform_state": "platform-state/",
         "public_site_bundle": "infra/site/",
