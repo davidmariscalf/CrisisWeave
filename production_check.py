@@ -16,6 +16,8 @@ ACTION_USES_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)", re.MULTILINE)
 REQUIRED_FILES = (
     "components.lock.json",
     "integrate.py",
+    "case_studies.py",
+    "CASE_STUDIES.md",
     "run_pinned.py",
     "seal_artifact.py",
     "schema/event.schema.json",
@@ -64,7 +66,7 @@ def check_json_schema() -> None:
 
 
 def check_python_sources() -> None:
-    for rel in ("integrate.py", "run_pinned.py", "seal_artifact.py", "production_check.py"):
+    for rel in ("integrate.py", "case_studies.py", "run_pinned.py", "seal_artifact.py", "production_check.py"):
         source = (ROOT / rel).read_text(encoding="utf-8")
         compile(source, str(ROOT / rel), "exec")
 
