@@ -4,8 +4,8 @@
   "components": {
     "crisisweave-cores": "24cb0dc5f0e963d0d0f3ff034fb8dbecbb78eb40",
     "crisisweave-ingests": "c72449aab8d3a4a601940adf277d5396756b8f3f",
-    "crisisweave-verify": "848ae301e2dcb492b77dfb8c79b2975d2e52cbbe",
-    "crisisweave-alerts": "1f7e82f9319083c38ae1d086b2e7af6facdc1322",
+    "crisisweave-verify": "17d6f006023502e0dd35996470c53b5ea00bdd24",
+    "crisisweave-alerts": "3d6ef47e02ed5abd634ca48bc3df3d021ac4744f",
     "crisisweave-worksites": "18381dd0a22b7f0f435355adbc5d01ea44844b77",
     "crisisweave-platform": "1a78177060cc77ff2c5776d5b6088f4deb568219",
     "crisisweave-map": "a8a084b340b0f6cb39ca1cf41fe1a4febeaf8410",
