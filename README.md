@@ -19,7 +19,7 @@ The E2E demo exercises **eleven public repositories**:
 - `crisisweave-verify` — candidate matching, deduplication and evidence aggregation
 - `crisisweave-alerts` — transparent alert rules
 - `crisisweave-worksites` — worksite lifecycle, SQLite state, atomic team assignment, audit trail, privacy-minimised public export and partner adapters
-- `crisisweave-platform` — organisations, roles, HMAC-protected expiring bearer tokens, revocation, private-data store, gateway, exact-origin CORS, rate limiting, health/readiness, verified backups and privacy-safe Prometheus metrics
+- `crisisweave-platform` — organisations, roles, HMAC-protected expiring bearer tokens, revocation, operational coordinator console, private-data store, gateway, exact-origin CORS, rate limiting, health/readiness, verified backups and privacy-safe Prometheus metrics
 - `crisisweave-map` — coordinator incident console + volunteer work board
 - `crisisweave-offline` — service-worker caching, packaged same-origin map runtime and snapshot fallback
 - `crisisweave-docs` — architecture and threat model
@@ -149,6 +149,10 @@ python crisisweave-worksites/worksites.py --db artifact/worksites.db serve --por
 ```
 
 The authenticated deployment boundary lives in `crisisweave-platform`. Its `openapi.yaml`, README and `artifact/platform/DEPLOYMENT.md` describe the platform API and deployment baseline.
+
+## Operational coordinator console
+
+The authenticated `/admin` surface is now an operational worksite panel rather than a status-only page. Coordinators/admins can assign ready worksites, release assignments and perform valid lifecycle transitions. Volunteer/viewer roles remain read-only, and the server independently enforces every mutation permission. Tokens stay in page memory only.
 
 ## Platform hardening now exercised
 
