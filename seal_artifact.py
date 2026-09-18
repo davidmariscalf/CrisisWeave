@@ -21,7 +21,9 @@ def sha256(path: Path) -> str:
 
 def files(root: Path):
     for path in sorted(root.rglob("*"), key=lambda p: p.as_posix()):
-        if path.is_file() and path.name not in {MANIFEST, PROVENANCE}:
+        if path.is_symlink():
+            raise SystemExit(f"artifact contains symlink: {path.relative_to(root).as_posix()}")
+        if path.is_file() and path.name != MANIFEST:
             yield path
 
 
@@ -36,7 +38,7 @@ def write_manifest(root: Path, lock_path: Path) -> None:
         "umbrella_commit": os.getenv("GITHUB_SHA") or None,
         "components": lock["components"],
         "artifact_manifest": MANIFEST,
-        "note": "Hashes cover the generated E2E artifact, excluding the manifest and provenance files themselves.",
+        "note": "Hashes cover the generated E2E artifact, including BUILD_PROVENANCE.json and excluding only the manifest itself.",
     }
     (root / PROVENANCE).write_text(
         json.dumps(provenance, sort_keys=True, indent=2) + "\n", encoding="utf-8"

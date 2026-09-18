@@ -47,6 +47,13 @@ def load_lock() -> tuple[str, dict[str, str]]:
     return owner, {str(k): str(v) for k, v in components.items()}
 
 
+def clean_component_worktree(path: Path) -> None:
+    """Remove all untracked/ignored state and require a clean Git worktree."""
+    run(["git", "clean", "-ffdx"], cwd=path)
+    if run(["git", "status", "--porcelain"], cwd=path):
+        raise RuntimeError(f"component checkout is not clean after reset: {path.name}")
+
+
 def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None:
     path = workspace / name
     if path.exists() and not (path / ".git").exists():
@@ -62,6 +69,10 @@ def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None
             raise RuntimeError(f"unexpected origin for {name}: {remote}")
     run(["git", "fetch", "--depth", "1", "origin", sha], cwd=path)
     run(["git", "checkout", "--detach", "--force", "FETCH_HEAD"], cwd=path)
+    # Reused workspaces must not retain untracked or ignored files from an older
+    # revision. Otherwise a supposedly pinned build can depend on stale local
+    # state that is not represented by the locked commit SHA.
+    clean_component_worktree(path)
     actual = run(["git", "rev-parse", "HEAD"], cwd=path)
     if actual != sha:
         raise RuntimeError(f"component revision mismatch for {name}: expected {sha}, got {actual}")

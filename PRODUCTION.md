@@ -21,7 +21,7 @@ A release candidate is acceptable only when:
 1. `production_check.py` passes.
 2. The fast `Quality gate` passes on Python 3.11 and 3.12.
 3. `Cross-repo E2E` passes against all revisions in `components.lock.json`.
-4. `MANIFEST.sha256` and `BUILD_PROVENANCE.json` are present and `seal_artifact.py --verify` passes.
+4. `MANIFEST.sha256` and `BUILD_PROVENANCE.json` are present, the provenance file is itself covered by the manifest, and `seal_artifact.py --verify` passes.
 5. All external GitHub Actions remain pinned to immutable 40-character commit SHAs.
 
 ## Public deployment boundary
@@ -36,4 +36,4 @@ Do not describe CrisisWeave as an emergency authority, dispatch system or sole s
 
 Do not advance `components.lock.json` merely because component default branches changed. Promote component revisions only after their own tests are green and the umbrella E2E passes at the exact proposed SHAs.
 
-The lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.
+The locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.\n\nThe locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.\n\nThe lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.
