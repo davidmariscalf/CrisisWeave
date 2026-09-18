@@ -42,6 +42,20 @@ class SealArtifactTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 seal_artifact.verify(artifact)
 
+    def test_symlink_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "payload.txt"
+            target.write_text("synthetic\n", encoding="utf-8")
+            link = root / "payload-link.txt"
+            try:
+                link.symlink_to(target.name)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlinks are not available on this platform")
+
+            with self.assertRaises(SystemExit):
+                list(seal_artifact.files(root))
+
 
 if __name__ == "__main__":
     unittest.main()
