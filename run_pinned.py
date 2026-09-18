@@ -47,6 +47,13 @@ def load_lock() -> tuple[str, dict[str, str]]:
     return owner, {str(k): str(v) for k, v in components.items()}
 
 
+def clean_component_worktree(path: Path) -> None:
+    """Remove all untracked/ignored state and require a clean Git worktree."""
+    run(["git", "clean", "-ffdx"], cwd=path)
+    if run(["git", "status", "--porcelain"], cwd=path):
+        raise RuntimeError(f"component checkout is not clean after reset: {path.name}")
+
+
 def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None:
     path = workspace / name
     if path.exists() and not (path / ".git").exists():
