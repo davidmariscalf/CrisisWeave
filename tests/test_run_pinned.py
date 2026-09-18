@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import run_pinned
 
@@ -39,6 +40,25 @@ class RunPinnedTests(unittest.TestCase):
                 stdout=subprocess.PIPE,
             ).stdout
             self.assertEqual(status, "")
+
+
+    def test_checkout_component_verifies_the_checked_out_sha(self) -> None:
+        expected_sha = "a" * 40
+        calls = []
+
+        def fake_run(cmd, *, cwd=None):
+            calls.append(tuple(cmd))
+            if cmd == ["git", "status", "--porcelain"]:
+                return ""
+            if cmd == ["git", "rev-parse", "HEAD"]:
+                return expected_sha
+            return ""
+
+        with tempfile.TemporaryDirectory() as tmp, patch.object(run_pinned, "run", side_effect=fake_run):
+            run_pinned.checkout_component(Path(tmp), "owner", "crisisweave-test", expected_sha)
+
+        self.assertIn(("git", "clean", "-ffdx"), calls)
+        self.assertIn(("git", "rev-parse", "HEAD"), calls)
 
 
 if __name__ == "__main__":
