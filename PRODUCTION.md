@@ -36,4 +36,4 @@ Do not describe CrisisWeave as an emergency authority, dispatch system or sole s
 
 Do not advance `components.lock.json` merely because component default branches changed. Promote component revisions only after their own tests are green and the umbrella E2E passes at the exact proposed SHAs.
 
-The lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.
+The locked runner also cleans untracked and ignored files from reused component workspaces before testing, so a release cannot silently depend on stale local state.\n\nThe lock file is the release bill of materials for the public CrisisWeave component set. Generated artifacts are sealed separately so that their file contents can be verified independently of Git history.
