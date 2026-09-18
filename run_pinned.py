@@ -62,7 +62,7 @@ def checkout_component(workspace: Path, owner: str, name: str, sha: str) -> None
             raise RuntimeError(f"unexpected origin for {name}: {remote}")
     run(["git", "fetch", "--depth", "1", "origin", sha], cwd=path)
     run(["git", "checkout", "--detach", "--force", "FETCH_HEAD"], cwd=path)
-    actual = run(["git", "rev-parse", "HEAD"], cwd=path)
+    # Reused workspaces must not retain untracked or ignored files from an older\n    # revision. Otherwise a supposedly pinned build can depend on stale local\n    # state that is not represented by the locked commit SHA.\n    run(["git", "clean", "-ffdx"], cwd=path)\n    if run(["git", "status", "--porcelain"], cwd=path):\n        raise RuntimeError(f"component checkout is not clean after reset: {name}")\n    actual = run(["git", "rev-parse", "HEAD"], cwd=path)
     if actual != sha:
         raise RuntimeError(f"component revision mismatch for {name}: expected {sha}, got {actual}")
 
