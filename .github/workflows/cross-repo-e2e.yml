@@ -55,6 +55,9 @@ jobs:
           assert s['platform_tests'] == 'passed', s
           assert s['platform_identity_bootstrap'] == 'passed', s
           assert s['raw_token_storage_check'] == 'passed', s
+          assert s['public_site_provenance'] == 'passed', s
+          assert len(s['public_site_source_revision']) == 40, s
+          assert (root / 'infra' / 'site' / 'build.json').is_file(), s
           assert s['demo_worksites'] >= 1, s
           assert s['alerts'] >= 1, s
           synthetic = [json.loads(x) for x in (root / 'synthetic.jsonl').read_text().splitlines() if x.strip()]
