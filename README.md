@@ -138,7 +138,7 @@ Volunteer board:
 http://localhost:8765/volunteer.html
 ```
 
-The volunteer UI falls back to the packaged public snapshot when no operational API is available. The coordinator console rejects non-HTTP(S) source links, exposes feed freshness, and ships a pinned MapLibre runtime inside the field package. With no network, the console uses a local no-basemap style instead of depending on a mapping CDN.
+The volunteer UI reads only the privacy-minimised packaged public snapshot (or its cached copy); it never connects directly to the operational worksite API. The coordinator console rejects non-HTTP(S) source links, exposes feed freshness, and ships a pinned MapLibre runtime inside the field package. With no network, the console uses a local no-basemap style instead of depending on a mapping CDN.
 
 ## Operational worksite API
 
@@ -220,4 +220,4 @@ CrisisWeave remains decision-support and coordination software, not an emergency
 
 ## Status and licensing
 
-This is a public beta with reproducible release tooling and synthetic evaluation surfaces. It is not yet an approved live humanitarian deployment. The repositories are publicly readable, but a formal project-wide license has not yet been selected. Until a license is added, do not describe the full project as redistributable open-source software.
+This is a public beta with reproducible release tooling and synthetic evaluation surfaces. It is not yet an approved live humanitarian deployment. The repositories are publicly readable, but a formal project-wide license has not yet been selected. See `LICENSING_AUDIT.md` for the third-party inventory and remaining owner decision. Until a license is added, do not describe the full project as redistributable open-source software.
