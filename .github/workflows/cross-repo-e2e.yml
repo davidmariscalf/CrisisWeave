@@ -56,6 +56,7 @@ jobs:
           assert s['platform_identity_bootstrap'] == 'passed', s
           assert s['raw_token_storage_check'] == 'passed', s
           assert s['public_site_provenance'] == 'passed', s
+          assert s['deploy_stack_pins'] == 'match_locked_components', s
           assert len(s['public_site_source_revision']) == 40, s
           assert (root / 'infra' / 'site' / 'build.json').is_file(), s
           assert s['demo_worksites'] >= 1, s
