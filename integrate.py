@@ -197,6 +197,7 @@ def main() -> int:
         "site/robots.txt", "site/sitemap.xml", "site/.well-known/security.txt",
         "netlify.toml", ".env.example", "scripts/check-secrets.py", "scripts/build-site.py",
         "ecosystem/components.lock.json", "ecosystem/README.md",
+        "deploy/stack/release-pins.json", "deploy/stack/check-release-pins.py",
         "deploy/identity/README.md", "deploy/secrets/README.md", "deploy/dr/README.md",
     )
     for rel in infra_required:
@@ -206,6 +207,18 @@ def main() -> int:
     components = json.loads((infra_repo / "ecosystem" / "components.lock.json").read_text(encoding="utf-8"))
     if components.get("schema_version") != 1 or len(components.get("components", [])) < 6:
         raise AssertionError("external infrastructure component lock is incomplete")
+
+    deploy_pins = json.loads((infra_repo / "deploy" / "stack" / "release-pins.json").read_text(encoding="utf-8"))
+    if deploy_pins.get("schema_version") != 1:
+        raise AssertionError("deploy stack release pin schema is unsupported")
+    for component, key in (("crisisweave-platform", "platform"), ("crisisweave-worksites", "worksites")):
+        actual = run(["git", "rev-parse", "HEAD"], cwd=repos[component]).strip().lower()
+        pinned = str((deploy_pins.get(key) or {}).get("commit") or "").lower()
+        if pinned != actual:
+            raise AssertionError(
+                f"deploy stack {key} pin {pinned or '<missing>'} does not match locked {component} revision {actual}"
+            )
+    run([sys.executable, str(infra_repo / "deploy" / "stack" / "check-release-pins.py")], cwd=infra_repo / "deploy" / "stack")
 
     infra_artifact = artifact / "infra"
     infra_artifact.mkdir()
@@ -335,6 +348,7 @@ def main() -> int:
         "infrastructure_checks": "passed",
         "public_site_source_revision": infra_revision,
         "public_site_provenance": "passed",
+        "deploy_stack_pins": "match_locked_components",
         "external_component_profiles": "validated_not_deployed",
         "artifact": str(artifact),
         "coordinator_console": "web/index.html",
