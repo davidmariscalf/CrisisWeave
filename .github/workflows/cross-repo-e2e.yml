@@ -19,7 +19,7 @@ jobs:
   integrate:
     name: Cross-repo E2E
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - name: Checkout umbrella repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,6 +61,25 @@ jobs:
           assert synthetic and all(x.get('synthetic') is True for x in synthetic)
           print(json.dumps(s, indent=2))
           PY
+
+      - name: Install pinned browser smoke-test runtime
+        run: |
+          npm install --no-save --package-lock=false playwright@1.63.0
+          npx playwright install --with-deps chromium
+
+      - name: Cold-start field package with network disabled
+        run: |
+          python -m http.server 8765 --bind 127.0.0.1 --directory "$RUNNER_TEMP/crisisweave/artifact/web" >"$RUNNER_TEMP/crisisweave-http.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" >/dev/null 2>&1 || true' EXIT
+          for _ in $(seq 1 50); do
+            if curl --fail --silent http://127.0.0.1:8765/index.html >/dev/null; then
+              break
+            fi
+            sleep 0.2
+          done
+          curl --fail --silent http://127.0.0.1:8765/index.html >/dev/null
+          CW_WEB_URL=http://127.0.0.1:8765 node tests/offline_browser_smoke.mjs
 
       - name: Seal and verify generated artifact
         run: |
