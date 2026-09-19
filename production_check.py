@@ -22,6 +22,7 @@ REQUIRED_FILES = (
     "seal_artifact.py",
     "schema/event.schema.json",
     "PRODUCTION.md",
+    "LICENSING_AUDIT.md",
     ".github/workflows/cross-repo-e2e.yml",
     ".github/workflows/quality.yml",
     "tests/offline_browser_smoke.mjs",
