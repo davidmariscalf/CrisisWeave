@@ -117,6 +117,8 @@ https://crisisweave.netlify.app/coordinator-demo.html
 
 They are designed for usability feedback without exposing operational feeds, credentials or survivor records. The volunteer demo has no self-claim action; assignments remain a coordinator-controlled operation.
 
+The infrastructure build now stamps `build.json` and `health.json` with the exact source commit used to generate the public site. Source-linked Netlify deployment is still an account-level configuration step; until that is enabled, a manual deploy can be made auditable by building and uploading the stamped `dist/` directory.
+
 The requested custom domain is `crisisweave.owns.it.com`; activation depends on the external domain registry accepting its pull request.
 
 ## Field package
