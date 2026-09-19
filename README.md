@@ -142,6 +142,10 @@ http://localhost:8765/volunteer.html
 
 The volunteer UI reads only the privacy-minimised packaged public snapshot (or its cached copy); it never connects directly to the operational worksite API. The coordinator console rejects non-HTTP(S) source links, exposes feed freshness, and ships a pinned MapLibre runtime inside the field package. With no network, the console uses a local no-basemap style instead of depending on a mapping CDN.
 
+## Deployable backend stack
+
+The reviewed Docker Compose stack in `crisisweave-infra/deploy/stack` now pins the same `crisisweave-platform` and `crisisweave-worksites` commits as the umbrella release. The umbrella E2E fails if those deploy pins drift from `components.lock.json`. The infrastructure workflow separately builds the pinned images, starts the complete stack, verifies auth/readiness/metrics, exercises maintenance, and completes backup/restore/encrypted-export drills before the infrastructure revision is promoted here.
+
 ## Operational worksite API
 
 From the workspace root:
