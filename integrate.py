@@ -190,7 +190,7 @@ def main() -> int:
     infra_required = (
         "site/index.html", "site/_headers", "site/_redirects", "site/health.json",
         "site/robots.txt", "site/sitemap.xml", "site/.well-known/security.txt",
-        "netlify.toml", ".env.example", "scripts/check-secrets.py",
+        "netlify.toml", ".env.example", "scripts/check-secrets.py", "scripts/build-site.py",
         "ecosystem/components.lock.json", "ecosystem/README.md",
         "deploy/identity/README.md", "deploy/secrets/README.md", "deploy/dr/README.md",
     )
@@ -203,7 +203,22 @@ def main() -> int:
         raise AssertionError("external infrastructure component lock is incomplete")
 
     infra_artifact = artifact / "infra"
-    shutil.copytree(infra_repo / "site", infra_artifact / "site")
+    infra_artifact.mkdir()
+    infra_revision = run(["git", "rev-parse", "HEAD"], cwd=infra_repo).strip().lower()
+    if len(infra_revision) != 40 or any(ch not in "0123456789abcdef" for ch in infra_revision):
+        raise AssertionError("infrastructure source revision is not a full Git SHA")
+    run([
+        sys.executable,
+        str(infra_repo / "scripts" / "build-site.py"),
+        "--output",
+        str(infra_artifact / "site"),
+        "--revision",
+        infra_revision,
+    ], cwd=infra_repo)
+    build_meta = json.loads((infra_artifact / "site" / "build.json").read_text(encoding="utf-8"))
+    health_meta = json.loads((infra_artifact / "site" / "health.json").read_text(encoding="utf-8"))
+    if build_meta.get("source_revision") != infra_revision or health_meta.get("source_revision") != infra_revision:
+        raise AssertionError("public site provenance does not match infrastructure source revision")
     shutil.copytree(infra_repo / "ecosystem", infra_artifact / "ecosystem")
     shutil.copytree(infra_repo / "deploy", infra_artifact / "deploy")
     shutil.copy2(infra_repo / "netlify.toml", infra_artifact / "netlify.toml")
@@ -313,6 +328,8 @@ def main() -> int:
         "platform_identity_bootstrap": "passed",
         "raw_token_storage_check": "passed",
         "infrastructure_checks": "passed",
+        "public_site_source_revision": infra_revision,
+        "public_site_provenance": "passed",
         "external_component_profiles": "validated_not_deployed",
         "artifact": str(artifact),
         "coordinator_console": "web/index.html",
