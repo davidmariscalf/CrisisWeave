@@ -156,6 +156,8 @@ The authenticated deployment boundary lives in `crisisweave-platform`. Its `open
 
 The authenticated `/admin` surface is now an operational worksite panel rather than a status-only page. Coordinators/admins can assign ready worksites, release assignments and perform valid lifecycle transitions. Volunteer/viewer roles remain read-only, and the server independently enforces every mutation permission. Tokens stay in page memory only.
 
+Initial organisation setup is a single atomic CLI operation: `crisisweave-platform bootstrap` creates the organisation, first admin and initial expiring token in one transaction. The raw token is shown once and is never persisted in plaintext.
+
 ## Platform hardening now exercised
 
 The public platform MVP now includes:
