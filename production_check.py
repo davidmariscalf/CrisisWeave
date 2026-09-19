@@ -24,6 +24,7 @@ REQUIRED_FILES = (
     "PRODUCTION.md",
     ".github/workflows/cross-repo-e2e.yml",
     ".github/workflows/quality.yml",
+    "tests/offline_browser_smoke.mjs",
 )
 FORBIDDEN_TRACKED_BASENAMES = {".env", "id_rsa", "id_ed25519"}
 FORBIDDEN_TRACKED_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}
@@ -95,6 +96,19 @@ def check_workflow_pins() -> int:
     return checked
 
 
+def check_browser_smoke() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "cross-repo-e2e.yml").read_text(encoding="utf-8")
+    required = (
+        "playwright@1.63.0",
+        "playwright install --with-deps chromium",
+        "tests/offline_browser_smoke.mjs",
+        "Cold-start field package with network disabled",
+    )
+    missing = [item for item in required if item not in workflow]
+    if missing:
+        raise RuntimeError("offline browser smoke workflow is incomplete: " + ", ".join(missing))
+
+
 def check_launchers() -> None:
     for rel in ("demo.sh", "demo.ps1"):
         text = (ROOT / rel).read_text(encoding="utf-8")
@@ -137,6 +151,7 @@ def main() -> int:
     check_json_schema()
     check_python_sources()
     actions = check_workflow_pins()
+    check_browser_smoke()
     check_launchers()
     check_git_and_tracked_secrets()
     print(json.dumps({
@@ -144,6 +159,7 @@ def main() -> int:
         "python": sys.version.split()[0],
         "locked_components": components,
         "immutable_actions_checked": actions,
+        "offline_browser_smoke": "pinned",
         "launchers": "locked_and_sealed",
         "tracked_secret_filenames": "clear",
     }, indent=2))
