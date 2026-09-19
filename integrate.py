@@ -168,13 +168,18 @@ def main() -> int:
     platform_script = platform_repo / "crisisweave_platform.py"
     pepper = "synthetic-e2e-pepper-value-not-for-production"
     base = [sys.executable, str(platform_script), "--db", str(platform_db), "--private-db", str(private_db), "--pepper", pepper]
-    run(base + ["init"])
-    run(base + ["create-org", "demo-relief", "Demo Relief"])
-    run(base + ["create-principal", "coord-e2e", "--org", "demo-relief", "--name", "E2E Coordinator", "--role", "coordinator"])
-    issued = json.loads(run(base + ["issue-token", "coord-e2e"]))
-    token = issued.get("token", "")
-    if not token.startswith("cw_"):
-        raise AssertionError("platform did not issue a CrisisWeave bearer token")
+    bootstrap = json.loads(run(base + [
+        "bootstrap",
+        "--org-id", "demo-relief",
+        "--org-name", "Demo Relief",
+        "--admin-id", "admin-e2e",
+        "--admin-name", "E2E Administrator",
+        "--ttl-hours", "1",
+    ]))
+    token = bootstrap.get("token", "")
+    principal = bootstrap.get("principal") or {}
+    if not token.startswith("cw_") or principal.get("role") != "admin":
+        raise AssertionError("platform bootstrap did not create an admin and bearer token")
     if token.encode() in platform_db.read_bytes():
         raise AssertionError("raw platform token was stored in SQLite")
 
