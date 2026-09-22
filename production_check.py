@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent
 SHA40_RE = re.compile(r"^[0-9a-f]{40}$")
 ACTION_USES_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)", re.MULTILINE)
 REQUIRED_FILES = (
+    ".editorconfig",
     "components.lock.json",
     "integrate.py",
     "case_studies.py",
@@ -29,6 +30,18 @@ REQUIRED_FILES = (
 )
 FORBIDDEN_TRACKED_BASENAMES = {".env", "id_rsa", "id_ed25519"}
 FORBIDDEN_TRACKED_SUFFIXES = {".pem", ".key", ".p12", ".pfx"}
+TEXT_SUFFIXES = {"", ".md", ".txt", ".json", ".yml", ".yaml", ".toml", ".py", ".js", ".mjs", ".ts", ".html", ".css", ".sh", ".ps1"}
+PRIVATE_KEY_MARKER = "-----BEGIN " + "PRIVATE KEY-----"
+HIGH_CONFIDENCE_SECRET_PATTERNS = (
+    re.compile(r"AKIA[0-9A-Z]{16}"),
+    re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
+    re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
+    re.compile(r"Bearer\\s+[A-Za-z0-9._~+/-]{20,}", re.IGNORECASE),
+)
+SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?im)^\\s*([A-Za-z_][A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)\\s*[:=]\\s*['\\\"]?([^#\\s'\\\"]{16,})"
+)
+PLACEHOLDER_MARKERS = ("EXAMPLE", "CHANGEME", "REPLACE_", "YOUR_", "<", "$\\{")
 
 
 def check_python() -> None:
@@ -123,7 +136,7 @@ def check_launchers() -> None:
             raise RuntimeError(f"{rel} bypasses the locked runner")
 
 
-def check_git_and_tracked_secrets() -> None:
+def check_git_and_tracked_secrets() -> int:
     if shutil.which("git") is None:
         raise RuntimeError("git is required")
     proc = subprocess.run(
@@ -136,13 +149,52 @@ def check_git_and_tracked_secrets() -> None:
     )
     if proc.returncode != 0:
         raise RuntimeError(f"git ls-files failed: {proc.stderr.strip()}")
-    violations = []
+
+    filenames: list[str] = []
+    content_violations: list[str] = []
+    scanned = 0
+
     for raw in proc.stdout.splitlines():
-        path = Path(raw.strip())
+        rel = raw.strip()
+        if not rel:
+            continue
+        path = Path(rel)
         if path.name in FORBIDDEN_TRACKED_BASENAMES or path.suffix.lower() in FORBIDDEN_TRACKED_SUFFIXES:
-            violations.append(raw.strip())
-    if violations:
-        raise RuntimeError("potential secret-bearing files are tracked: " + ", ".join(violations))
+            filenames.append(rel)
+            continue
+
+        full = ROOT / path
+        if path.suffix.lower() not in TEXT_SUFFIXES or not full.is_file():
+            continue
+        try:
+            text = full.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+
+        scanned += 1
+        if PRIVATE_KEY_MARKER in text:
+            content_violations.append(f"{rel}: private-key material")
+
+        for pattern in HIGH_CONFIDENCE_SECRET_PATTERNS:
+            if pattern.search(text):
+                content_violations.append(f"{rel}: high-confidence credential pattern")
+                break
+
+        for match in SECRET_ASSIGNMENT_RE.finditer(text):
+            value = match.group(2)
+            upper = value.upper()
+            if any(marker in upper for marker in PLACEHOLDER_MARKERS):
+                continue
+            if value.startswith(("http://", "https://", "/")):
+                continue
+            content_violations.append(f"{rel}: possible populated secret assignment")
+            break
+
+    if filenames:
+        raise RuntimeError("potential secret-bearing files are tracked: " + ", ".join(filenames))
+    if content_violations:
+        raise RuntimeError("potential secret material found in tracked content: " + ", ".join(content_violations))
+    return scanned
 
 
 def main() -> int:
@@ -154,7 +206,7 @@ def main() -> int:
     actions = check_workflow_pins()
     check_browser_smoke()
     check_launchers()
-    check_git_and_tracked_secrets()
+    secret_files_scanned = check_git_and_tracked_secrets()
     print(json.dumps({
         "ok": True,
         "python": sys.version.split()[0],
@@ -163,6 +215,8 @@ def main() -> int:
         "offline_browser_smoke": "pinned",
         "launchers": "locked_and_sealed",
         "tracked_secret_filenames": "clear",
+        "tracked_secret_content": "clear",
+        "tracked_text_files_scanned": secret_files_scanned,
     }, indent=2))
     return 0
 
