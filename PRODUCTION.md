@@ -23,6 +23,7 @@ A release candidate is acceptable only when:
 3. `Cross-repo E2E` passes against all revisions in `components.lock.json`.
 4. `MANIFEST.sha256` and `BUILD_PROVENANCE.json` are present, the provenance file is itself covered by the manifest, and `seal_artifact.py --verify` passes.
 5. All external GitHub Actions remain pinned to immutable 40-character commit SHAs.
+6. A public Netlify deployment is source-linked to the locked `crisisweave-infra` revision and its deployed `build.json` / `health.json` provenance is verified against that exact SHA.
 
 ## Public deployment boundary
 
