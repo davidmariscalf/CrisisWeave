@@ -39,7 +39,7 @@ HIGH_CONFIDENCE_SECRET_PATTERNS = (
     re.compile(r"Bearer\s+[A-Za-z0-9._~+/-]{20,}", re.IGNORECASE),
 )
 SECRET_ASSIGNMENT_RE = re.compile(
-    r"(?im)^\\s*([A-Za-z_][A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)\\s*[:=]\\s*['\\\"]?([^#\\s'\\\"]{16,})"
+    r"(?im)^\s*([A-Za-z_][A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)\s*[:=]\s*([^\s#]{16,})"
 )
 PLACEHOLDER_MARKERS = ("EXAMPLE", "CHANGEME", "REPLACE_", "YOUR_", "<", "${")
 
