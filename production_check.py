@@ -36,12 +36,12 @@ HIGH_CONFIDENCE_SECRET_PATTERNS = (
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"gh[pousr]_[A-Za-z0-9]{20,}"),
     re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
-    re.compile(r"Bearer\\s+[A-Za-z0-9._~+/-]{20,}", re.IGNORECASE),
+    re.compile(r"Bearer\s+[A-Za-z0-9._~+/-]{20,}", re.IGNORECASE),
 )
 SECRET_ASSIGNMENT_RE = re.compile(
     r"(?im)^\\s*([A-Za-z_][A-Za-z0-9_.-]*(?:api[_-]?key|token|secret|password|private[_-]?key|client[_-]?secret)[A-Za-z0-9_.-]*)\\s*[:=]\\s*['\\\"]?([^#\\s'\\\"]{16,})"
 )
-PLACEHOLDER_MARKERS = ("EXAMPLE", "CHANGEME", "REPLACE_", "YOUR_", "<", "$\\{")
+PLACEHOLDER_MARKERS = ("EXAMPLE", "CHANGEME", "REPLACE_", "YOUR_", "<", "${")
 
 
 def check_python() -> None:
