@@ -19,7 +19,7 @@ The audit covers the umbrella repository plus the eleven repositories used by th
 - crisisweave-docs
 - crisisweave-infra
 
-At the time of this audit, none of those repositories has a root `LICENSE` file. CrisisWeave therefore remains publicly readable source, not software with an explicit project-wide redistribution grant.
+The project owner selected the Apache License 2.0 for CrisisWeave original code. The umbrella repository and the eleven repositories used by the locked release now include a root `LICENSE` file with the Apache-2.0 terms.
 
 ## Original CrisisWeave code
 
@@ -53,23 +53,15 @@ The Crisis Cleanup integration is an adapter/reference boundary. CrisisWeave doe
 
 The release workflow uses GitHub Actions and a pinned Playwright/Chromium test runtime to verify browser behavior. Those tools are CI dependencies and are not shipped as CrisisWeave application source or runtime assets in the sealed field package.
 
-## Project-license decision still required
+## Project license
 
-The current engineering audit did not find a bundled dependency that appears to force CrisisWeave to choose one specific permissive license for its original code.
+CrisisWeave original code is licensed under the **Apache License 2.0**. The selected license is permissive and includes an explicit patent grant and patent-termination terms.
 
-Two previously discussed options remain reasonable candidates:
+The bundled MapLibre runtime remains third-party material under its own BSD 3-Clause license, and `MAPLIBRE_LICENSE.txt` must remain in generated field packages. External deployment components continue to use their own upstream licenses.
 
-- **MIT** — short and permissive.
-- **Apache License 2.0** — permissive and includes an explicit patent grant and patent-termination terms.
+## Ongoing licensing checks
 
-The project owner must choose deliberately. Do not add a project-wide `LICENSE` or describe CrisisWeave as redistributable open-source software until that decision is made.
-
-## After the decision
-
-Once the project license is selected:
-
-1. Add the chosen `LICENSE` consistently to the original-code repositories.
-2. Keep `MAPLIBRE_LICENSE.txt` in generated field packages and any other required third-party notices.
+1. Keep the root `LICENSE` present across the umbrella and component repositories.
+2. Keep `MAPLIBRE_LICENSE.txt` in generated field packages and preserve any other required third-party notices.
 3. Add a top-level third-party notices document if additional vendored assets are introduced later.
-4. Update README/status wording from publicly readable/public source to the selected open-source license.
-5. Add CI guardrails that fail if the project license or required bundled notices disappear.
+4. Revisit contributor/relicensing assumptions if externally contributed code is incorporated.
