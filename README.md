@@ -228,4 +228,4 @@ CrisisWeave remains decision-support and coordination software, not an emergency
 
 ## Status and licensing
 
-This is a public beta with reproducible release tooling and synthetic evaluation surfaces. It is not yet an approved live humanitarian deployment. The repositories are publicly readable, but a formal project-wide license has not yet been selected. See `LICENSING_AUDIT.md` for the third-party inventory and remaining owner decision. Until a license is added, do not describe the full project as redistributable open-source software.
+This is a public beta with reproducible release tooling and synthetic evaluation surfaces. It is not yet an approved live humanitarian deployment. CrisisWeave and the eleven public component repositories are licensed under the Apache License 2.0. See `LICENSING_AUDIT.md` for the third-party inventory and licensing notes.
